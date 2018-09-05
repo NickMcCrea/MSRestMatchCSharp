@@ -25,13 +25,14 @@ namespace MSRestMatchCSharp
             secretToken = secretCode;
 
             //despawn first in case we're re-running
-            helper.DespawnTank(secretToken);
+            //helper.DespawnTank(secretToken);
 
 
             Thread.Sleep(1000);
 
             helper.CreateTank(name, secretToken, colour, startX, startZ, 0);
 
+            //BasicMovementTest();
 
 
 
@@ -51,7 +52,7 @@ namespace MSRestMatchCSharp
             //1. Identify the closest target.
             //2. Swivel the barrel to keep aim at it.
             //3. Move within range.
-            //4. Fire6
+            //4. Fire
 
             var newClosest = FindClosestTank();
 
@@ -65,20 +66,14 @@ namespace MSRestMatchCSharp
 
             if (currentClosest != null)
             {
-                Console.WriteLine("Closest Tank: " + currentClosest.Name);
+               
+                float targetHeading = GetHeading(ownState.X, ownState.Y, currentClosest.X, currentClosest.Y);
 
-                float heading = GetHeading(ownState.X, ownState.Y, currentClosest.X, currentClosest.Y);
+                //TurnTurretBasedOnHeading(targetHeading);
 
 
-                if (Math.Abs(heading - ownState.TurretHeading) < 10)
+                if (GetTurnDir(ownState.TurretHeading, targetHeading))
                 {
-                    if (helper.tracker.LastCalledInterval(RequestType.StopTurret) > 100)
-                        helper.StopTurret(secretToken);
-                }
-
-                if (ownState.TurretHeading > heading)
-                {
-                    Console.WriteLine("Turn turret right");
                     if (helper.tracker.LastCalledInterval(RequestType.TurretRight) > 100)
                         helper.TurretRight(secretToken);
 
@@ -86,12 +81,57 @@ namespace MSRestMatchCSharp
                 }
                 else
                 {
-                    Console.WriteLine("Turn turret left");
                     if (helper.tracker.LastCalledInterval(RequestType.TurretLeft) > 100)
                         helper.TurretLeft(secretToken);
-
                 }
+
+
             }
+
+        }
+
+        double HeadingDiff(double h1, double h2)
+        { 
+            // angle between two headings
+            double diff = h1 - h2 + 3600 % 360;
+            return diff <= 180 ? diff : 360 - diff;
+        }
+    
+        /// Left is false
+        bool GetTurnDir(double hdg, double newHdg)
+        { // should a new heading turn left or right?
+            if (newHdg > hdg)
+                return newHdg - hdg > 180;
+            return hdg - newHdg > 180;
+        }
+
+        private void TurnTurretBasedOnHeading(float heading)
+        {
+            if (Math.Abs(heading - ownState.TurretHeading) < 10)
+            {
+                if (helper.tracker.LastCalledInterval(RequestType.StopTurret) > 100)
+                    helper.StopTurret(secretToken);
+            }
+
+
+            if (ownState.TurretHeading > heading)
+            {
+
+                if (helper.tracker.LastCalledInterval(RequestType.TurretRight) > 100)
+                    helper.TurretRight(secretToken);
+
+            }
+            else
+            {
+
+                if (helper.tracker.LastCalledInterval(RequestType.TurretLeft) > 100)
+                    helper.TurretLeft(secretToken);
+
+            }
+
+
+
+
 
         }
 
@@ -167,7 +207,14 @@ namespace MSRestMatchCSharp
             return angle * (180.0 / Math.PI);
         }
 
-        private void BasicMovementTest(RestMatchApiHelper helper, string secretToken)
+
+        private float VectorDot(float x1, float y1, float x2, float y2)
+        {
+            return (x1 * x2) + (y1 * y2);
+        }
+
+
+        private void BasicMovementTest()
         {
             Thread.Sleep(1000);
 
@@ -182,6 +229,8 @@ namespace MSRestMatchCSharp
             helper.Left(secretToken);
             Thread.Sleep(1000);
 
+            RefreshOwnState();
+            PrintState();
             helper.Right(secretToken);
             Thread.Sleep(1000);
 
@@ -189,14 +238,23 @@ namespace MSRestMatchCSharp
 
             helper.TurretLeft(secretToken);
             Thread.Sleep(1000);
-
+            RefreshOwnState();
+            PrintState();
             helper.TurretRight(secretToken);
             Thread.Sleep(1000);
 
             helper.StopTurret(secretToken);
+            RefreshOwnState();
+            PrintState();
             helper.Fire(secretToken);
         }
 
+        private void PrintState()
+        {
+            Console.WriteLine("POS: " + ownState.X + ":" + ownState.Y);
+            Console.WriteLine("HEADING: " + ownState.Heading);
+            Console.WriteLine("TURRET: " + ownState.TurretHeading);
+        }
 
     }
 
