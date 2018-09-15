@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using RestSharp;
 using Newtonsoft.Json;
+using System.Text;
 
 namespace MSRestMatchCSharp
 {
@@ -188,4 +186,26 @@ namespace MSRestMatchCSharp
             lastRequestTracker[type] = DateTime.Now;
         }
     }
+
+    public static class APIHelper
+    {
+
+        public static byte[] CreateTank(string name, string token, string color)
+        {
+            string message = name + ":" + token + ":" + color;
+            byte[] clientMessageAsByteArray = Encoding.ASCII.GetBytes(message);
+            return AddByteStartOfToArray(clientMessageAsByteArray, 1);
+        }
+
+        public static byte[] AddByteStartOfToArray(byte[] bArray, byte newByte)
+        {
+            byte[] newArray = new byte[bArray.Length + 1];
+            bArray.CopyTo(newArray, 1);
+            newArray[0] = newByte;
+            return newArray;
+        }
+    }
+
 }
+
+

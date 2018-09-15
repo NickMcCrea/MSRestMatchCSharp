@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MSRestMatchCSharp;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net.Sockets;
@@ -9,16 +10,25 @@ using System.Threading;
 public class TCPTestClient
 {
     #region private members 	
-    private TcpClient socketConnection;
+    private TcpClient client;
     private Thread clientReceiveThread;
     private Timer messageTimer;
+    private int number;
     #endregion
     // Use this for initialization 	
     public TCPTestClient()
     {
+        number = new Random().Next(0, 100);
+
         ConnectToTcpServer();
+
+        
      
-        messageTimer = new Timer(x => { SendMessage(); }, null, 0, 1000);
+       // messageTimer = new Timer(x => { SendMessage(); }, null, 0, 1000);
+
+
+        SendMessage(APIHelper.CreateTank("NickTank", "secretToken", "#EA9414"));
+
     }
     // Update is called once per frame
     void Update()
@@ -50,12 +60,12 @@ public class TCPTestClient
     {
         try
         {
-            socketConnection = new TcpClient("localhost", 8052);
+            client = new TcpClient("localhost", 8052);
             Byte[] bytes = new Byte[1024];
             while (true)
             {
                 // Get a stream object for reading 				
-                using (NetworkStream stream = socketConnection.GetStream())
+                using (NetworkStream stream = client.GetStream())
                 {
                     int length;
                     // Read incomming stream into byte arrary. 					
@@ -80,21 +90,24 @@ public class TCPTestClient
     /// </summary> 	
     private void SendMessage()
     {
-        if (socketConnection == null)
+        if (client == null)
         {
             return;
         }
         try
         {
             // Get a stream object for writing. 			
-            NetworkStream stream = socketConnection.GetStream();
+            NetworkStream stream = client.GetStream();
             if (stream.CanWrite)
             {
-                string clientMessage = "This is a message from one of your clients.";
+                string clientMessage = "This is a message from " + number;
                 // Convert string message to byte array.                 
                 byte[] clientMessageAsByteArray = Encoding.ASCII.GetBytes(clientMessage);
-                // Write byte array to socketConnection stream.                 
-                stream.Write(clientMessageAsByteArray, 0, clientMessageAsByteArray.Length);
+                // Write byte array to socketConnection stream.     
+
+                var newArray = APIHelper.AddByteStartOfToArray(clientMessageAsByteArray, 0);
+
+                stream.Write(newArray, 0, newArray.Length);
                 
             }
         }
@@ -103,4 +116,28 @@ public class TCPTestClient
             Console.WriteLine("Socket exception: " + socketException);
         }
     }
+
+    private void SendMessage(byte[] message)
+    {
+        if (client == null)
+        {
+            return;
+        }
+        try
+        {
+            // Get a stream object for writing. 			
+            NetworkStream stream = client.GetStream();
+            if (stream.CanWrite)
+            {             
+                stream.Write(message, 0, message.Length);
+
+            }
+        }
+        catch (SocketException socketException)
+        {
+            Console.WriteLine("Socket exception: " + socketException);
+        }
+    }
+
+   
 }
