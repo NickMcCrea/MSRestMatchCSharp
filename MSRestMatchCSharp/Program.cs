@@ -18,26 +18,19 @@ namespace MSRestMatchCSharp
 
             //helper.CreateTank("NickTank", secretToken, "#EA9414", -10, -60, 90);
 
-            //NickTankBot bot = new NickTankBot("http://localhost", 8000, "NickBot",
-            //    "nicksecrettoken", "#EA9414", 0, 0, 0);
+            NickTankBot bot = new NickTankBot("http://localhost", 8000, "NickBot","nicksecrettoken", "#EA9414", 0, 0, 0);
 
 
 
-            TCPTestClient tc = new TCPTestClient();
+        
 
-
-            while (true)
+            while (!bot.botQuit)
             {
 
+                bot.Update();
+                Thread.Sleep(16);
+
             }
-            
-            //while (!bot.botQuit)
-            //{
-
-            //    bot.Update();
-            //    Thread.Sleep(16);
-
-            //}
 
 
 

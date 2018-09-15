@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,36 +10,103 @@ namespace MSRestMatchCSharp
 {
     public class NickTankBot
     {
-
+        private TcpClient client;
+        private Thread clientReceiveThread;
         string secretToken;
         public bool botQuit = false;
-        RestMatchApiHelper helper;
+      
         List<GameObjectState> objectState;
         GameObjectState ownState;
         GameObjectState currentClosest;
 
-        public NickTankBot(string url, int port, string name, string secretCode, string colour, float startX, float startZ, float angle)
+        public NickTankBot(string ip, int port, string name, string secretCode, string colour, float startX, float startZ, float angle)
         {
 
+            ConnectToTcpServer();
 
-            helper = new RestMatchApiHelper(url, port);
+
+            Thread.Sleep(5000);
+
+
+            SendMessage(APIHelper.CreateTankMessage(name, secretCode, colour));
+          
             secretToken = secretCode;
 
             //despawn first in case we're re-running
-            //helper.DespawnTank(secretToken);
+            //helper.DespawnTank(secretToken
 
-
-            Thread.Sleep(1000);
-
-            helper.CreateTank(name, secretToken, colour, startX, startZ, 0);
-
-            //BasicMovementTest();
+            BasicMovementTest();
 
 
 
 
         }
 
+        private void ConnectToTcpServer()
+        {
+            try
+            {
+                clientReceiveThread = new Thread(new ThreadStart(ListenForData));
+                clientReceiveThread.IsBackground = true;
+                clientReceiveThread.Start();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("On client connect exception " + e);
+            }
+        }
+
+        private void ListenForData()
+        {
+            try
+            {
+                client = new TcpClient("localhost", 8052);
+                Byte[] bytes = new Byte[1024];
+                while (true)
+                {
+                    // Get a stream object for reading 				
+                    using (NetworkStream stream = client.GetStream())
+                    {
+                        int length;
+                        // Read incomming stream into byte arrary. 					
+                        while ((length = stream.Read(bytes, 0, bytes.Length)) != 0)
+                        {
+                            var incommingData = new byte[length];
+                            Array.Copy(bytes, 0, incommingData, 0, length);
+                            // Convert byte array to string message. 						
+                            string serverMessage = Encoding.ASCII.GetString(incommingData);
+                            Console.WriteLine("server message received as: " + serverMessage);
+                        }
+                    }
+                }
+            }
+            catch (SocketException socketException)
+            {
+                Console.WriteLine("Socket exception: " + socketException);
+            }
+        }
+
+        private void SendMessage(byte[] message)
+        {
+            if (client == null)
+            {
+                return;
+            }
+            try
+            {
+                // Get a stream object for writing. 			
+                NetworkStream stream = client.GetStream();
+                if (stream.CanWrite)
+                {
+                    stream.Write(message, 0, message.Length);
+
+                }
+            }
+            catch (SocketException socketException)
+            {
+                Console.WriteLine("Socket exception: " + socketException);
+            }
+        }
 
         public void Update()
         {
@@ -74,15 +142,15 @@ namespace MSRestMatchCSharp
 
                 if (GetTurnDir(ownState.TurretHeading, targetHeading))
                 {
-                    if (helper.tracker.LastCalledInterval(RequestType.TurretRight) > 100)
-                        helper.TurretRight(secretToken);
+                    //if (helper.tracker.LastCalledInterval(RequestType.TurretRight) > 100)
+                    //    helper.TurretRight(secretToken);
 
 
                 }
                 else
                 {
-                    if (helper.tracker.LastCalledInterval(RequestType.TurretLeft) > 100)
-                        helper.TurretLeft(secretToken);
+                    //if (helper.tracker.LastCalledInterval(RequestType.TurretLeft) > 100)
+                    //    helper.TurretLeft(secretToken);
                 }
 
 
@@ -109,23 +177,23 @@ namespace MSRestMatchCSharp
         {
             if (Math.Abs(heading - ownState.TurretHeading) < 10)
             {
-                if (helper.tracker.LastCalledInterval(RequestType.StopTurret) > 100)
-                    helper.StopTurret(secretToken);
+                //if (helper.tracker.LastCalledInterval(RequestType.StopTurret) > 100)
+                //    helper.StopTurret(secretToken);
             }
 
 
             if (ownState.TurretHeading > heading)
             {
 
-                if (helper.tracker.LastCalledInterval(RequestType.TurretRight) > 100)
-                    helper.TurretRight(secretToken);
+                //if (helper.tracker.LastCalledInterval(RequestType.TurretRight) > 100)
+                //    helper.TurretRight(secretToken);
 
             }
             else
             {
 
-                if (helper.tracker.LastCalledInterval(RequestType.TurretLeft) > 100)
-                    helper.TurretLeft(secretToken);
+                //if (helper.tracker.LastCalledInterval(RequestType.TurretLeft) > 100)
+                //    helper.TurretLeft(secretToken);
 
             }
 
@@ -137,16 +205,16 @@ namespace MSRestMatchCSharp
 
         private void RefreshOwnState()
         {
-            if (helper.tracker.LastCalledInterval(RequestType.GetOwnState) > 200)
-                ownState = helper.GetTankState(secretToken);
+            //if (helper.tracker.LastCalledInterval(RequestType.GetOwnState) > 200)
+            //    ownState = helper.GetTankState(secretToken);
 
         }
 
         private void RefreshViewObjectState()
         {
             //make sure we refresh our knowledge of the world every 500 milliseconds
-            if (helper.tracker.LastCalledInterval(RequestType.GetObjectsInView) > 500)
-                objectState = helper.GetObjectsInView(secretToken);
+            //if (helper.tracker.LastCalledInterval(RequestType.GetObjectsInView) > 500)
+            //    objectState = helper.GetObjectsInView(secretToken);
 
 
 
@@ -218,35 +286,36 @@ namespace MSRestMatchCSharp
         {
             Thread.Sleep(1000);
 
-            helper.Forward(secretToken);
+            SendMessage(APIHelper.CreateMessage(NetworkMessageType.forward, secretToken));
             Thread.Sleep(1000);
 
-            helper.Reverse(secretToken);
+            SendMessage(APIHelper.CreateMessage(NetworkMessageType.reverse, secretToken));
             Thread.Sleep(1000);
 
-            helper.Stop(secretToken);
-
-            helper.Left(secretToken);
+            SendMessage(APIHelper.CreateMessage(NetworkMessageType.stop, secretToken));
             Thread.Sleep(1000);
 
-            RefreshOwnState();
-            PrintState();
-            helper.Right(secretToken);
+            SendMessage(APIHelper.CreateMessage(NetworkMessageType.left, secretToken));
             Thread.Sleep(1000);
 
-            helper.Stop(secretToken);
 
-            helper.TurretLeft(secretToken);
-            Thread.Sleep(1000);
-            RefreshOwnState();
-            PrintState();
-            helper.TurretRight(secretToken);
+            SendMessage(APIHelper.CreateMessage(NetworkMessageType.right, secretToken));
             Thread.Sleep(1000);
 
-            helper.StopTurret(secretToken);
-            RefreshOwnState();
-            PrintState();
-            helper.Fire(secretToken);
+            SendMessage(APIHelper.CreateMessage(NetworkMessageType.stop, secretToken));
+            Thread.Sleep(1000);
+
+            SendMessage(APIHelper.CreateMessage(NetworkMessageType.turretLeft, secretToken));
+            Thread.Sleep(1000);
+
+            SendMessage(APIHelper.CreateMessage(NetworkMessageType.turretRight, secretToken));
+            Thread.Sleep(1000);
+
+            SendMessage(APIHelper.CreateMessage(NetworkMessageType.stopTurret, secretToken));
+            Thread.Sleep(1000);
+
+            SendMessage(APIHelper.CreateMessage(NetworkMessageType.fire, secretToken));
+
         }
 
         private void PrintState()

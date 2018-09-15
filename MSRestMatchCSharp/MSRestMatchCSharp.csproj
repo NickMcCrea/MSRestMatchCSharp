@@ -54,8 +54,7 @@
     <Compile Include="NickTankBot.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RestMatchApiHelper.cs" />
-    <Compile Include="TCPIPTestClient.cs" />
+    <Compile Include="ApiHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
