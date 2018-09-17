@@ -53,7 +53,7 @@ namespace MSRestMatchCSharp
         }
     }
 
-    public static class APIHelper
+    public static class MessageFactory
     {
 
         public static byte[] CreateTankMessage(string name, string token, string color)
@@ -95,7 +95,7 @@ namespace MSRestMatchCSharp
         turretLeft = 9,
         turretRight = 10,
         stopTurret = 11,
-
+        objectUpdate = 12
     }
 
 }

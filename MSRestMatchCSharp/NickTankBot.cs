@@ -28,14 +28,14 @@ namespace MSRestMatchCSharp
             Thread.Sleep(5000);
 
 
-            SendMessage(APIHelper.CreateTankMessage(name, secretCode, colour));
+            SendMessage(MessageFactory.CreateTankMessage(name, secretCode, colour));
           
             secretToken = secretCode;
 
             //despawn first in case we're re-running
             //helper.DespawnTank(secretToken
 
-            BasicMovementTest();
+            //BasicMovementTest();
 
 
 
@@ -71,11 +71,7 @@ namespace MSRestMatchCSharp
                         // Read incomming stream into byte arrary. 					
                         while ((length = stream.Read(bytes, 0, bytes.Length)) != 0)
                         {
-                            var incommingData = new byte[length];
-                            Array.Copy(bytes, 0, incommingData, 0, length);
-                            // Convert byte array to string message. 						
-                            string serverMessage = Encoding.ASCII.GetString(incommingData);
-                            Console.WriteLine("server message received as: " + serverMessage);
+                            DecodeMessage((NetworkMessageType)bytes[0], bytes, length);
                         }
                     }
                 }
@@ -85,6 +81,23 @@ namespace MSRestMatchCSharp
                 Console.WriteLine("Socket exception: " + socketException);
             }
         }
+
+
+        private void DecodeMessage(NetworkMessageType messageType, byte[] bytes, int length)
+        {
+
+            var incomingData = new byte[length];
+            Array.Copy(bytes, 1, incomingData, 0, length);
+            string clientMessage = Encoding.ASCII.GetString(incomingData);
+
+
+            var strings = clientMessage.Split(':');
+            var token = strings[0];
+
+            Console.WriteLine(messageType.ToString() + " -- " + clientMessage);
+
+        }
+
 
         private void SendMessage(byte[] message)
         {
@@ -286,35 +299,35 @@ namespace MSRestMatchCSharp
         {
             Thread.Sleep(1000);
 
-            SendMessage(APIHelper.CreateMessage(NetworkMessageType.forward, secretToken));
+            SendMessage(MessageFactory.CreateMessage(NetworkMessageType.forward, secretToken));
             Thread.Sleep(1000);
 
-            SendMessage(APIHelper.CreateMessage(NetworkMessageType.reverse, secretToken));
+            SendMessage(MessageFactory.CreateMessage(NetworkMessageType.reverse, secretToken));
             Thread.Sleep(1000);
 
-            SendMessage(APIHelper.CreateMessage(NetworkMessageType.stop, secretToken));
+            SendMessage(MessageFactory.CreateMessage(NetworkMessageType.stop, secretToken));
             Thread.Sleep(1000);
 
-            SendMessage(APIHelper.CreateMessage(NetworkMessageType.left, secretToken));
+            SendMessage(MessageFactory.CreateMessage(NetworkMessageType.left, secretToken));
             Thread.Sleep(1000);
 
 
-            SendMessage(APIHelper.CreateMessage(NetworkMessageType.right, secretToken));
+            SendMessage(MessageFactory.CreateMessage(NetworkMessageType.right, secretToken));
             Thread.Sleep(1000);
 
-            SendMessage(APIHelper.CreateMessage(NetworkMessageType.stop, secretToken));
+            SendMessage(MessageFactory.CreateMessage(NetworkMessageType.stop, secretToken));
             Thread.Sleep(1000);
 
-            SendMessage(APIHelper.CreateMessage(NetworkMessageType.turretLeft, secretToken));
+            SendMessage(MessageFactory.CreateMessage(NetworkMessageType.turretLeft, secretToken));
             Thread.Sleep(1000);
 
-            SendMessage(APIHelper.CreateMessage(NetworkMessageType.turretRight, secretToken));
+            SendMessage(MessageFactory.CreateMessage(NetworkMessageType.turretRight, secretToken));
             Thread.Sleep(1000);
 
-            SendMessage(APIHelper.CreateMessage(NetworkMessageType.stopTurret, secretToken));
+            SendMessage(MessageFactory.CreateMessage(NetworkMessageType.stopTurret, secretToken));
             Thread.Sleep(1000);
 
-            SendMessage(APIHelper.CreateMessage(NetworkMessageType.fire, secretToken));
+            SendMessage(MessageFactory.CreateMessage(NetworkMessageType.fire, secretToken));
 
         }
 
