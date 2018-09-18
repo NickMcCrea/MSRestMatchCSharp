@@ -87,7 +87,7 @@ namespace MSRestMatchCSharp
         {
 
             var incomingData = new byte[length];
-            Array.Copy(bytes, 1, incomingData, 0, length);
+            Array.Copy(bytes, 1, incomingData, 0, length-1);
             string clientMessage = Encoding.ASCII.GetString(incomingData);
 
 
